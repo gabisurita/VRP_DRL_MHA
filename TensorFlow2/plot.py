@@ -1,14 +1,30 @@
+import argparse
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from time import time
 
 from model import AttentionModel
-from data import generate_data, data_from_txt
+from data import generate_data
 from baseline import load_model
-from config import test_parser
 
 import tensorflow as tf
+import numpy as np
+
+
+def test_parser():
+	parser = argparse.ArgumentParser()
+	parser.add_argument('-p', '--path', metavar = 'P', type = str, required = True,  
+						help = 'Weights/VRP***_train_epoch***.h5, h5 file required')
+	parser.add_argument('-b', '--batch', metavar = 'B', type = int, default = 2, help = 'batch size')
+	parser.add_argument('-n', '--n_customer', metavar = 'N', type = int, default = 20, help = 'number of customer nodes, time sequence')
+	parser.add_argument('-s', '--seed', metavar = 'S', type = int, default = 123, help = 'random seed number for inference, reproducibility')
+	parser.add_argument('-t', '--txt', metavar = 'T', type = str, help = 'if you wanna test out on text file, example: ../OpenData/A-n53-k7.txt')
+	parser.add_argument('-d', '--decode_type', metavar = 'D', type = str, required = True, choices = ['greedy', 'sampling'], help = 'greedy or sampling required')
+	args = parser.parse_args()
+
+	return args
 
 
 def get_clean_path(arr):
@@ -159,12 +175,7 @@ if __name__ == "__main__":
     pretrained = load_model(
         args.path, embed_dim=128, n_customer=args.n_customer, n_encode_layers=3
     )
-    # model = AttentionModel()
-    print(f"model loading time:{time()-t1}s")
-    if args.txt is not None:
-        dataset = data_from_txt(args.txt)
-    else:
-        dataset = generate_data(n_samples=1, n_customer=args.n_customer, seed=args.seed)
+    dataset = generate_data(n_samples=1, n_customer=args.n_customer, seed=args.seed)
     print(f"data generate time:{time()-t1}s")
 
     # dataset = generate_data(n_samples = 128, n_customer = 100, seed = 29)
