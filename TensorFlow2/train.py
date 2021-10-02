@@ -189,10 +189,10 @@ if __name__ == "__main__":
     # n_samples / batch must be integer.
     cfg.n_samples = 12_800  # 100_000
     cfg.batch_verbose = 10
-    cfg.batch = 128
+    cfg.batch = 32
     cfg.batch_steps = 2500
-    cfg.learning_rate = 5e-4
-    cfg.task = "VRP50_refac"
+    cfg.learning_rate = 1e-4
+    cfg.task = "VRP20_tiny"
     # cfg.load_path = "./Weights/VRP50_large_pretrained.h5"
 
     print("Start train")

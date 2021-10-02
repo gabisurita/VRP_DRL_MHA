@@ -49,7 +49,7 @@ class GraphTransformerEncoder(tf.keras.models.Model):
             for _ in range(n_layers)
         ]
 
-    @tf.function
+    @tf.function(jit_compile=True)
     def call(self, x, mask=None, training=True):
         depot_xy, customer_xy, demand = x
 
@@ -85,7 +85,7 @@ class PointerDecoder(tf.keras.models.Model):
             key_dim=embed_dim,
         )
 
-    @tf.function
+    @tf.function(jit_compile=True)
     def call(self, node_embeddings, step_context, mask):
         Q_step = self.Wq_step(step_context)
         Q_fixed = self.Wq_fixed(tf.reduce_sum(node_embeddings, axis=1, keepdims=True))
@@ -133,6 +133,7 @@ class AttentionModel(tf.keras.models.Model):
     def decode(self, x, node_embeddings, mask=None, training=True):
         return self.decoder(x, node_embeddings, mask, training=training)
 
+    @tf.function(jit_compile=True)
     def call(self, x, **kwargs):
         return solve(self, x, **kwargs)
 
@@ -146,6 +147,7 @@ def get_costs(coords, route):
     )
 
 
+@tf.function()
 def solve(net, problems, deterministic=False, training=True):
     depot_xy, customer_xy, demand = problems
 
@@ -153,6 +155,7 @@ def solve(net, problems, deterministic=False, training=True):
     node_embeddings = net.encode(problems, training=training)
 
     bsz, n_nodes, _ = node_embeddings.shape
+    max_len = 2 * n_nodes
     demand = tf.concat([tf.zeros((bsz, 1)), demand], axis=-1)
     xy = tf.concat([depot_xy[:, None, :], customer_xy], 1)
 
@@ -178,16 +181,16 @@ def solve(net, problems, deterministic=False, training=True):
 
     log_ps = tf.TensorArray(
         dtype=tf.float32,
-        size=0,
-        dynamic_size=True,
+        size=max_len ,
+        dynamic_size=False,
         element_shape=(bsz, n_nodes),
     )
 
     tours = tf.TensorArray(
-        dtype=tf.int32, size=0, dynamic_size=True, element_shape=(bsz,)
+        dtype=tf.int32, size=max_len, dynamic_size=False, element_shape=(bsz,)
     )
 
-    for i in range(n_nodes * 2):
+    for i in tf.range(max_len):
 
         logits = net.decode(node_embeddings, step_context, mask[:, :, None])
 
